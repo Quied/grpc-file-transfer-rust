@@ -4,7 +4,7 @@ mod file_service;
 use crate::{cli::Cli, file_service::FileServiceImpl};
 use anyhow::{anyhow, Result};
 use proto::api::file_service_server::FileServiceServer;
-use std::{net::SocketAddr, path::Path};
+use std::{net::{Ipv4Addr, SocketAddr}, path::Path};
 use tokio::net::TcpListener;
 use tonic::transport::{server::TcpIncoming, Certificate, Identity, Server, ServerTlsConfig};
 
@@ -25,9 +25,14 @@ fn create_tls_config(
 
     Ok(tls_config)
 }
+use std::net::IpAddr;
+
 
 pub async fn server_main(args: &Cli) -> Result<()> {
-    let socket_addr = SocketAddr::new(args.address, args.port.unwrap_or(0));
+    // let socket_addr = SocketAddr::new(args.address, args.port.unwrap_or(0));
+    let socket_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 3000);
+    println!("sockett addr: {:?}", &socket_addr);
+
     let listener = TcpListener::bind(socket_addr).await?;
     let local_addr = listener.local_addr()?;
     let listener = TcpIncoming::from_listener(listener, true, None).map_err(|e| anyhow!(e))?;
@@ -52,6 +57,7 @@ pub async fn server_main(args: &Cli) -> Result<()> {
     println!("Server address {local_addr}");
 
     server
+    
         .add_service(file_service_server)
         .serve_with_incoming(listener)
         .await?;
